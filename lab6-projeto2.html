@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Variação da chuva acumulada por ano (2016 a 2025) - Fazenda Carnaúba - Taperoá - PB</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%;}
+  #wrap { display: flex; flex-direction: column; height: 100vh; }
+  #filterBar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 14px 30px;
+  }
+  #filterBar label { color: black; font-size: 13px; }
+  #filterBar input[type="number"] {
+    width: 90px; padding: 6px 8px; border-radius: 6px; border: 1px solid #34445f;
+     font-size: 13px;
+  }
+  #filterBar button {
+    padding: 7px 16px; border-radius: 6px; border: none; cursor: pointer;
+    font-size: 13px; font-weight: 600;
+  }
+  #applyBtn { background: #37A2FF; color: #08111f; }
+  #clearBtn { background: #22304a; color: #c9d6e8; }
+  #main { flex: 1; width: 100%; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="filterBar">
+    <label>Filtrar por variação (mm):</label>
+    <label>mínimo <input type="number" id="minVal" placeholder="ex: -500" /></label>
+    <label>máximo <input type="number" id="maxVal" placeholder="ex: 600" /></label>
+    <button id="applyBtn">Aplicar filtro</button>
+    <button id="clearBtn">Limpar filtro</button>
+    <span id="filterInfo" style="color:#8ea3c0; font-size:12px;"></span>
+  </div>
+  <div id="main"></div>
+</div>
+<script>
+
+const chuvaData = [
+  { ano: 2013, total: 280.0 },
+  { ano: 2014, total: 404.6 },
+  { ano: 2015, total: 386.7 },
+  { ano: 2016, total: 295.0 },
+  { ano: 2017, total: 211.5 },
+  { ano: 2018, total: 764.8 },
+  { ano: 2019, total: 497.9 },
+  { ano: 2020, total: 591.3 },
+  { ano: 2021, total: 388.5 },
+  { ano: 2022, total: 938.6 },
+  { ano: 2023, total: 465.6 },
+  { ano: 2024, total: 378.2 },
+  { ano: 2025, total: 528.5 },
+  { ano: 2026, total: 341.9 }
+];
+
+var variacoes = [];
+for (var i = 1; i < chuvaData.length; i++) {
+  var atual = chuvaData[i];
+  var anterior = chuvaData[i - 1];
+  if (atual.ano >= 2016 && atual.ano <= 2025) {
+    variacoes.push({
+      ano: atual.ano,
+      variacao: Math.round((atual.total - anterior.total) * 10) / 10
+    });
+  }
+}
+
+var chartDom = document.getElementById('main');
+var myChart = echarts.init(chartDom, null, { renderer: 'canvas' });
+
+function buildOption(data) {
+  var anos = data.map(function (d) { return d.ano; });
+  var vals = data.map(function (d) { return d.variacao; });
+
+  return {
+    title: {
+      text: 'Variação da chuva acumulada por ano (2016 a 2025)',
+      subtext: 'Fazenda Carnaúba - Taperoá - PB · variação em relação ao ano anterior',
+      left: 'center',
+      top: 15,
+      textStyle: { color: 'black', fontSize: 20, fontWeight: 'bold' },
+      subtextStyle: { color: 'black', fontSize: 13 }
+    },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: function (params) {
+        var p = params[0];
+        var v = p.value;
+        var sinal = v >= 0 ? '+' : '';
+        return '<b>' + p.axisValue + '</b><br/>' +
+               'Variação: <b>' + sinal + v.toFixed(1) + ' mm</b> em relação ao ano anterior';
+      }
+    },
+    toolbox: {
+      feature: {
+        saveAsImage: { title: 'Salvar imagem' },
+        restore: { title: 'Restaurar' }
+      },
+      iconStyle: { borderColor: 'black' },
+      right: 30,
+      top: 15
+    },
+    grid: { left: '6%', right: '6%', bottom: '20%', top: '22%', containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: anos,
+      axisLine: { lineStyle: { color: 'black' } },
+      axisLabel: { color: 'black', fontSize: 13 }
+    },
+    yAxis: {
+      type: 'value',
+      name: 'Variação (mm)',
+      nameTextStyle: { color: 'black' },
+      axisLine: { show: false },
+      axisLabel: { color: 'black' },
+      splitLine: { lineStyle: { color: 'black' } }
+    },
+    dataZoom: [
+      { type: 'inside', start: 0, end: 100 },
+      { type: 'slider', start: 0, end: 100, bottom: 30, textStyle: { color: '#c9d6e8' },
+        borderColor: '#22304a', fillerColor: 'rgba(255,0,135,0.2)', handleStyle: { color: '#FF0087' } }
+    ],
+    series: [
+      {
+        name: 'Variação',
+        type: 'bar',
+        barWidth: '55%',
+        data: vals.map(function (v) {
+          return {
+            value: v,
+            itemStyle: { color: v >= 0 ? '#00DDFF' : '#FF0087' }
+          };
+        }),
+        emphasis: { focus: 'series' },
+        markLine: {
+          silent: true,
+          symbol: 'none',
+          lineStyle: { color: '#8ea3c0', type: 'dashed' },
+          data: [{ yAxis: 0 }]
+        }
+      }
+    ]
+  };
+}
+
+myChart.setOption(buildOption(variacoes));
+window.addEventListener('resize', function () { myChart.resize(); });
+
+var filterInfo = document.getElementById('filterInfo');
+
+document.getElementById('applyBtn').addEventListener('click', function () {
+  var minInput = document.getElementById('minVal').value;
+  var maxInput = document.getElementById('maxVal').value;
+  var min = minInput === '' ? -Infinity : parseFloat(minInput);
+  var max = maxInput === '' ? Infinity : parseFloat(maxInput);
+
+  var filtrado = variacoes.filter(function (d) {
+    return d.variacao >= min && d.variacao <= max;
+  });
+
+  myChart.setOption(buildOption(filtrado), { notMerge: true });
+  filterInfo.textContent = filtrado.length + ' de ' + variacoes.length + ' anos exibidos';
+});
+
+document.getElementById('clearBtn').addEventListener('click', function () {
+  document.getElementById('minVal').value = '';
+  document.getElementById('maxVal').value = '';
+  myChart.setOption(buildOption(variacoes), { notMerge: true });
+  filterInfo.textContent = '';
+});
+</script>
+</body>
+</html>
